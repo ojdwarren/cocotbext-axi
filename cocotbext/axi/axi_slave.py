@@ -144,7 +144,14 @@ class AxiSlaveWrite(Reset):
 
             b = self.b_channel._transaction_obj()
             b.bid = awid
-            b.bresp = AxiResp.OKAY
+            b.bresp = response_hook(
+                awid=awid,
+                addr=addr,
+                length=length,
+                size=size,
+                burst=burst,
+                prot=prot
+            )            
 
             for n in range(length):
                 cur_word_addr = (cur_addr // self.byte_lanes) * self.byte_lanes
@@ -202,6 +209,8 @@ class AxiSlaveWrite(Reset):
 
             await self.b_channel.send(b)
 
+    def response_hook(**kwargs):
+        return AxiResp.OKAY
 
 class AxiSlaveRead(Reset):
     def __init__(self, bus, clock, reset=None, target=None, reset_active_level=True, **kwargs):
@@ -311,7 +320,14 @@ class AxiSlaveRead(Reset):
                 r = self.r_channel._transaction_obj()
                 r.rid = arid
                 r.rlast = n == length-1
-                r.rresp = AxiResp.OKAY
+                r.rresp = response_hook(
+                    awid=awid,
+                    addr=addr,
+                    length=length,
+                    size=size,
+                    burst=burst,
+                    prot=prot
+                )
 
                 try:
                     data = await self._read(cur_word_addr, self.byte_lanes)
@@ -335,6 +351,8 @@ class AxiSlaveRead(Reset):
                         if cur_addr == upper_wrap_boundary:
                             cur_addr = lower_wrap_boundary
 
+    def response_hook(**kwargs):
+        return AxiResp.OKAY
 
 class AxiSlave:
     def __init__(self, bus, clock, reset=None, target=None, reset_active_level=True, **kwargs):
